@@ -76,6 +76,10 @@ class Task(UDFModel, Auditable):
         },
     }
 
+    @classmethod
+    def display_name(cls, instance):
+        return _('Task')
+
     def save_with_user(self, user, *args, **kwargs):
         """
         Update WorkOrder fields when Task is saved.
