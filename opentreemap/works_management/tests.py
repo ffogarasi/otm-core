@@ -56,12 +56,12 @@ class WorksManagementTests(OTMTestCase):
         self.instance = make_instance()
         self.user = make_commander_user(self.instance)
         self.team = make_team(self.instance)
+        self.plot = make_plot(self.instance, self.user)
 
     def test_work_order(self):
         w = make_work_order(self.instance, self.user)
 
-        plot = make_plot(self.instance, self.user)
-        t = make_task(self.instance, self.user, plot)
+        t = make_task(self.instance, self.user, self.plot)
         t.work_order = w
         t.save_with_user(self.user)
         self.assertEqual(1, w.tasks.count())
@@ -82,7 +82,32 @@ class WorksManagementTests(OTMTestCase):
 
     def test_cannot_call_save_on_task(self):
         # Task is Auditible and should only allow calling save_with_user.
-        t = make_task(self.instance, self.user,
-                      make_plot(self.instance, self.user))
+        t = make_task(self.instance, self.user, self.plot)
         with self.assertRaises(UserTrackingException):
             t.save()
+
+    def test_work_order_sequence(self):
+        w1 = make_work_order(self.instance, self.user)
+        w2 = make_work_order(self.instance, self.user)
+        self.assertEqual(1, w1.reference_num)
+        self.assertEqual(2, w2.reference_num)
+
+        # Sequence numbers should be unique by instance.
+        other_instance = make_instance()
+        w1 = make_work_order(other_instance, self.user)
+        w2 = make_work_order(other_instance, self.user)
+        self.assertEqual(1, w1.reference_num)
+        self.assertEqual(2, w2.reference_num)
+
+    def test_task_sequence(self):
+        t1 = make_task(self.instance, self.user, self.plot)
+        t2 = make_task(self.instance, self.user, self.plot)
+        self.assertEqual(1, t1.reference_num)
+        self.assertEqual(2, t2.reference_num)
+
+        # Sequence numbers should be unique by instance.
+        other_instance = make_instance()
+        t1 = make_task(other_instance, self.user, self.plot)
+        t2 = make_task(other_instance, self.user, self.plot)
+        self.assertEqual(1, t1.reference_num)
+        self.assertEqual(2, t2.reference_num)
