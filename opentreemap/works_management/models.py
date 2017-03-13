@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from __future__ import division
 
 from django.contrib.gis.db import models
+from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 
@@ -24,6 +25,22 @@ class WorkOrder(Auditable, models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # This value comes from `instance.work_order_sequence_number`
+    reference_number = models.IntegerField()
+
+    class Meta:
+        unique_together = ('instance', 'reference_number')
+
+    def save_with_user(self, user, *args, **kwargs):
+        """
+        Update WorkOrder fields when Task is saved.
+        """
+        if not self.reference_number:
+            raise ValidationError({
+                'reference_number': [_('Reference number is required.')]})
+
+        super(WorkOrder, self).save_with_user(user, *args, **kwargs)
 
 
 class Task(UDFModel, Auditable):
@@ -59,6 +76,9 @@ class Task(UDFModel, Auditable):
     created_by = models.ForeignKey(User)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # This value comes from `instance.task_sequence_number`
+    reference_number = models.IntegerField()
+
     udf_settings = {
         'Action': {
             'iscollection': False,
@@ -74,11 +94,19 @@ class Task(UDFModel, Auditable):
         },
     }
 
+    class Meta:
+        unique_together = ('instance', 'reference_number')
+
     def save_with_user(self, user, *args, **kwargs):
         """
         Update WorkOrder fields when Task is saved.
         """
+        if not self.reference_number:
+            raise ValidationError({
+                'reference_number': [_('Reference number is required.')]})
+
         if self.work_order:
             self.work_order.updated_at = timezone.now()
             self.work_order.save_with_user(user, *args, **kwargs)
+
         super(Task, self).save_with_user(user, *args, **kwargs)
