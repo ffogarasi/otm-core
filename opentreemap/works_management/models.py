@@ -58,6 +58,16 @@ class Task(UDFModel, Auditable):
         (CANCELED, _('Canceled')),
     )
 
+    HIGH = 0
+    MEDIUM = 1
+    LOW = 2
+
+    PRIORITY_CHOICES = (
+        (HIGH, _('High')),
+        (MEDIUM, _('Medium')),
+        (LOW, _('Low')),
+    )
+
     instance = models.ForeignKey(Instance)
     map_feature = models.ForeignKey(MapFeature)
     work_order = models.ForeignKey(WorkOrder, null=True, related_name='tasks')
@@ -70,6 +80,10 @@ class Task(UDFModel, Auditable):
     status = models.IntegerField(
         choices=STATUS_CHOICES,
         default=REQUESTED)
+
+    priority = models.IntegerField(
+        choices=PRIORITY_CHOICES,
+        default=MEDIUM)
 
     requested_on = models.DateField()
     scheduled_on = models.DateField()
